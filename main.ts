@@ -4,13 +4,15 @@ import "jsr:@std/dotenv/load";
 
 // Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
 if (import.meta.main) {
-  const username = Deno.env.get("USERNAME");
-  const password = Deno.env.get("PASSWORD");
   const args = parseArgs(Deno.args, {
-    string: ["--ip", "--port"],
+    string: ["--ip", "--port", "--username", "--password"],
   });
+  const username = <string> args.username || Deno.env.get("USERNAME");
+  const password = <string> args.password || Deno.env.get("PASSWORD");
   if (!username || !password) {
-    throw new Error("USERNAME and PASSWORD envirenment variables required");
+    throw new Error(
+      "Required to include --username and --password arguments, or USERNAME and PASSWORD envirenment variables",
+    );
   }
   if (!args.ip || !args.port || !args.vlan) {
     throw new Error("--ip, --port and --vlan are required");

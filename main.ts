@@ -14,16 +14,18 @@ if (import.meta.main) {
       "Required to include --username and --password arguments, or USERNAME and PASSWORD envirenment variables",
     );
   }
-  if (!args.ip || !args.port || !args.vlan) {
-    throw new Error("--ip, --port and --vlan are required");
+  const ip = <string> args.ip || Deno.env.get("IP");
+  const port = <string> args.port || Deno.env.get("PORT");
+  if (!ip || !port) {
+    throw new Error("--ip, --port and are required");
   }
-  const port = <string> args.port;
   const vlan = <number> args.vlan;
 
-  const url = `https://${args.ip}/rest/v10.16/`;
+  const url = `https://${ip}/rest/v10.16/`;
   const cookies = await login(url, username, password);
   try {
-    setVlan(url, cookies, port, vlan);
+    const vlan = getVlan(url, cookies, port);
+    // setVlan(url, cookies, port, vlan);
   } catch (err) {
     console.error(err);
   } finally {
@@ -42,9 +44,13 @@ async function login(url: string, username: string, password: string) {
   });
 
   const res = await fetch(req);
-  // console.log(res);
   const headers = res.headers;
   const cookies = getSetCookies(headers);
+  if (!res.ok) {
+    console.log("res not ok");
+    console.log(res);
+  }
+  console.log("logged in successfully");
   return cookies;
 }
 
@@ -54,16 +60,46 @@ async function logout(url: string, cookies: Cookie[]) {
   for (const cookie of cookies) {
     headers.set("Cookie", `${cookie.name}=${cookie.value}`);
   }
-  // headers.set("accept", "*/*");
-  console.log("headers:");
-  console.log(headers);
   const req = new Request(logoutUrl, {
     method: "POST",
     headers: headers,
   });
 
   const res = await fetch(req);
-  // console.log(res);
+  if (!res.ok) {
+    console.log("res not OK:");
+    console.log(res);
+  }
+  console.log("logged out successfully");
+}
+
+async function getVlan(
+  url: string,
+  cookies: Cookie[],
+  port: string,
+): Promise<number> {
+  const vlanUrl = `${url}system/interfaces/${encodeURIComponent(port)}`;
+  const headers = new Headers();
+  for (const cookie of cookies) {
+    headers.set("Cookie", `${cookie.name}=${cookie.value}`);
+  }
+
+  const req = new Request(vlanUrl, {
+    method: "GET",
+    headers: headers,
+  });
+
+  const res = await fetch(req);
+  if (!res.ok) {
+    console.log("res not OK:");
+    console.log(res);
+  }
+
+  const data = await res.json();
+  const [vlan, _] = Object.entries(data.applied_vlan_tag)[0];
+  console.log("got vlan:");
+  console.log(vlan);
+  return parseInt(vlan, 10);
 }
 
 async function setVlan(
@@ -79,7 +115,7 @@ async function setVlan(
   }
   headers.set("Content-Type", "application/json");
   const data = {
-    vlan_mode: "native-untagged",
+    vlan_mode: "access",
     vlan_tag: {
       [vlan]: `/rest/v10.16/system/vlans/${vlan}`,
     },
@@ -91,5 +127,10 @@ async function setVlan(
   });
 
   const res = await fetch(req);
-  console.log(res);
+  if (!res.ok) {
+    console.log("res not OK");
+    console.log(res);
+    return;
+  }
+  console.log("set vlan successfully?");
 }

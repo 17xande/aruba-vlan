@@ -2,7 +2,9 @@
   "tasks": {
     "start": "deno run --allow-net --allow-env --allow-read --unsafely-ignore-certificate-errors main.ts",
     "dev": "deno run --watch main.ts",
-    "compile": "deno compile --allow-net --allow-env --allow-read --unsafely-ignore-certificate-errors main.ts"
+    "compile": "deno compile --allow-net --allow-env --allow-read --unsafely-ignore-certificate-errors main.ts",
+    "compile-win": "deno compile --allow-net --allow-env --allow-read --unsafely-ignore-certificate-errors --target x86_64-pc-windows-msvc --icon ./duck.ico --output ./aruba-vlan-win.exe main.ts"
+
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",

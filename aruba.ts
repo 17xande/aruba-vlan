@@ -34,13 +34,14 @@ export class ArubaSwitch {
       body: formData,
     });
 
+    console.log(req);
+
     const res = await fetch(req);
     const headers = res.headers;
     const cookies = getSetCookies(headers);
     if (!res.ok) {
       console.warn(res);
     }
-    console.log("logged in successfully");
     this.cookies = cookies;
     return res.ok;
   }
